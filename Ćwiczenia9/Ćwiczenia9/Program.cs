@@ -10,13 +10,15 @@ namespace Ćwiczenia9
         static void Main(string[] args)
         {
             LinqSamples samples = new LinqSamples();
-            var methods = samples.GetType()
+
+            var objects = samples
+                .GetType()
                 .GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .Where(item => item.Name.StartsWith("Przyklad"));
-            foreach(var method in methods)
+
+            foreach(var @object in objects)
             {
-                method.Invoke(samples, new object[0]);
-                Console.WriteLine();
+                @object.Invoke(samples, new object[0]);
             }
         }
     }
