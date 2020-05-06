@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
-using System.Runtime.Serialization;
+using System.Text;
+using System.Text.Unicode;
 
 namespace LinqConsoleApp
 {
@@ -198,6 +200,8 @@ namespace LinqConsoleApp
             //}
 
             //1. Query syntax (SQL)
+            Console.OutputEncoding = Encoding.UTF8;
+            Console.WriteLine("Przykład 1, Query syntax");
             var res = from emp in Emps
                       where emp.Job == "Backend programmer"
                       select new
@@ -205,8 +209,24 @@ namespace LinqConsoleApp
                           Nazwisko = emp.Ename,
                           Zawod = emp.Job
                       };
-
-
+            foreach(var anonymous in res)
+            {
+                Console.WriteLine(anonymous.Nazwisko + ", " + anonymous.Zawod);
+            }
+            Console.WriteLine();
+            Console.WriteLine("Przykład nr 1, Lambda");
+            var res1 = Emps
+                .Where(job => job.Job == "Backend programmer")
+                .Select(emp => new
+                {
+                    Nazwisko = emp.Ename,
+                    Zawod = emp.Job
+                });
+            foreach(var anonymous in res1)
+            {
+                Console.WriteLine(anonymous.Nazwisko + ", " + anonymous.Zawod);
+            }
+            Console.WriteLine("=============================");
             //2. Lambda and Extension methods
         }
 
@@ -221,10 +241,22 @@ namespace LinqConsoleApp
                 && objects.Salary > 1000
                 orderby objects.Ename descending
                 select objects;
+            Console.WriteLine("Przykład nr 2, Query Syntax");
+
             foreach(Emp emp in query)
             {
                 Console.WriteLine(emp.Ename + ", " + emp.Job + ", " + emp.Salary);
             }
+            Console.WriteLine();
+            var query1 = Emps
+                .Where(obj => obj.Job == "Frontend programmer" && obj.Salary > 1000)
+                .OrderByDescending(obj => obj.Ename);
+            Console.WriteLine("Przykład nr 2, Lambda");
+            foreach(Emp emp in query1)
+            {
+                Console.WriteLine(emp.Ename + ", " + emp.Job + ", " + emp.Salary);
+            }
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -236,7 +268,16 @@ namespace LinqConsoleApp
                 (from objects in Emps
                  orderby objects.Salary descending
                  select objects).First();
+            Console.WriteLine("Przykład nr 3, Query Syntax");
             Console.WriteLine(emp.Salary);
+            Console.WriteLine();
+            var emp1 = Emps
+                .OrderByDescending(obj => obj.Salary)
+                .Select(obj => obj)
+                .First();
+            Console.WriteLine("Przykład nr 3, Lambda");
+            Console.WriteLine(emp1.Salary);
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -246,11 +287,26 @@ namespace LinqConsoleApp
         {
             var emp =
                 (from objects in Emps
-                where objects == (from tmps in Emps
-                                  orderby tmps.Salary descending
-                                  select tmps).First()
-                select objects).First();
-            Console.WriteLine(emp.Ename + ", " + emp.Deptno + ", " + emp.Salary);
+                 where objects == (from tmps in Emps
+                                   orderby tmps.Salary descending
+                                   select tmps).First()
+                 select objects);
+            Console.WriteLine("Przyklad 4, Query syntax");
+            foreach(Emp tmp in emp)
+            {
+                Console.WriteLine(tmp.Ename + ", " + tmp.Salary);
+            }
+            Console.WriteLine();
+            var emp1 = Emps
+                .Where(emp => emp == (Emps.OrderByDescending(emp => emp.Salary)
+                .First()))
+                .Select(emp => emp);
+            Console.WriteLine("Przykład nr 4, Lambda");
+            foreach(Emp tmp in emp)
+            {
+                Console.WriteLine(tmp.Ename + ", " + tmp.Salary);
+            }
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -264,11 +320,23 @@ namespace LinqConsoleApp
                            Nazwisko = objects.Ename,
                            Praca = objects.Job
                        };
-            var list = emps.ToList();
-            foreach(var obj in list)
+            Console.WriteLine("Przykład nr 5, Query syntax");
+            foreach(var obj in emps.ToList())
             {
                 Console.WriteLine(obj.Nazwisko + ", " + obj.Praca);
             }
+            Console.WriteLine();
+            var emps1 = Emps.Select(obj => new
+            {
+                Nazwisko = obj.Ename,
+                Praca = obj.Job
+            });
+            Console.WriteLine("Przykład nr 5, Lambda");
+            foreach(var obj in emps1.ToList())
+            {
+                Console.WriteLine(obj.Nazwisko + ", " + obj.Praca);
+            }
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -278,14 +346,34 @@ namespace LinqConsoleApp
         /// </summary>
         public void Przyklad6()
         {
-            var objects = from emps in Emps
-                          join depts in Depts
-                          on emps.Deptno equals depts.Deptno
-                          select emps.Deptno + " " + depts.Deptno;
+            var objects = (from emp in Emps
+                          join dept in Depts
+                          on emp.Deptno equals dept.Deptno
+                          select emp.Ename + ", " + dept.Deptno).ToList();
+            Console.WriteLine("Przykład 6, Query syntax");
             foreach(var obj in objects)
             {
                 Console.WriteLine(obj);
             }
+
+            objects = Emps
+                .Join(Depts,
+                dept => dept.Deptno,
+                emp => emp.Deptno,
+                (emp, dept) => new
+                {
+                    emp,
+                    dept
+                })
+                .Select(obj => obj.emp.Ename + ", " + obj.dept.Deptno)
+                .ToList();
+            Console.WriteLine();
+            Console.WriteLine("Przykład 6, Lamda");
+            foreach(var obj in objects)
+            {
+                Console.WriteLine(obj);
+            }
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -298,9 +386,28 @@ namespace LinqConsoleApp
                           into newEmps
                            select new
                            {
-                               Praca = newEmps.Key
-                           }).Count();
-            Console.WriteLine(objects);
+                               Praca = newEmps.Key,
+                               EmpCount = newEmps.Count()
+                           });
+            Console.WriteLine("Przykład 7, Query syntax");
+            foreach(var som in objects)
+            {
+                Console.WriteLine(som.Praca + ", " + som.EmpCount);
+            }
+            Console.WriteLine();
+            Console.WriteLine("Przykład 7, Lambda");
+            objects = Emps.
+                GroupBy(emp => emp.Job)
+                .Select(emp => new
+                {
+                    Praca = emp.Key,
+                    EmpCount = emp.Count()
+                });
+            foreach(var som in objects)
+            {
+                Console.WriteLine(som.Praca + ", " + som.EmpCount);
+            }
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -312,7 +419,16 @@ namespace LinqConsoleApp
             var @object = ((from emps in Emps
                             where emps.Job == "Backend programmer"
                             select emps).Count() != 0);
+            Console.WriteLine("Przykład 8, Query syntax");
             Console.WriteLine(@object);
+            Console.WriteLine();
+            @object = (Emps
+                .Where(emp => emp.Job == "Backend programmer")
+                .Select(emp => emp)
+                .Count() != 0);
+            Console.WriteLine("Przykład 8, Lambda");
+            Console.WriteLine(@object);
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -325,7 +441,17 @@ namespace LinqConsoleApp
                            where emps.Job == "Frontend programmer"
                            orderby emps.HireDate descending
                            select emps).First();
+            Console.WriteLine("Przykład 9, Query syntax");
             Console.WriteLine(@object.Ename + " " + @object.Job);
+            @object = Emps
+                .Where(emp => emp.Job == "Frontend programmer")
+                .OrderByDescending(emp => emp.HireDate)
+                .Select(emp => emp)
+                .First();
+            Console.WriteLine();
+            Console.WriteLine("Przykład 9, Lambda");
+            Console.WriteLine(@object.Ename + " " + @object.Job);
+            Console.WriteLine("=============================");
         }
 
         /// <summary>
@@ -341,35 +467,87 @@ namespace LinqConsoleApp
                 Job = (string)null,
                 Hiredate = (string)null
             };
-            var anon = new List<dynamic>();
-            anon.Add(obj);
-            var result = Emps.Select(e => new
+            var list = new List<dynamic>();
+            list.Add(obj);
+            var union = (from emp in Emps
+                        select new
+                        {
+                            emp.Ename,
+                            emp.Job,
+                            emp.HireDate
+                        }).Union(list);
+            Console.WriteLine("Przykład 10, Query syntax");
+            foreach(var something in union)
             {
-                e.Ename,
-                e.Job,
-                e.HireDate
-            })
-                .Union(anon);
+                Console.WriteLine(something);
+            }
+            Console.WriteLine();
+            Console.WriteLine("Przykład 10, Lambda");
+            union = Emps
+                .Select(e => new
+                {
+                    e.Ename,
+                    e.Job,
+                    e.HireDate
+                })
+                .Union(list);
+            foreach(var something in union)
+            {
+                Console.WriteLine(something);
+            }
+            Console.WriteLine("=============================");
         }
 
         //Znajdź pracownika z najwyższą pensją wykorzystując metodę Aggregate()
         public void Przyklad11()
         {
-            var emp = Emps.Aggregate((highest, next) => next.Salary > highest.Salary ? next : highest);
-            Console.WriteLine(emp.Salary);
+            
+            Console.WriteLine("Przykład 11, Query syntax");
+            var query = (from emp in Emps
+                         where emp == (from tmp in Emps
+                                              orderby tmp.Salary descending
+                                              select tmp)
+                                              .First()
+                         select emp).First();
+            Console.WriteLine(query.Ename + ", " + query.Salary);
+            Console.WriteLine();
+            Console.WriteLine("Przykład 11, Lambda");
+            query = Emps.Aggregate((prev, next) => prev.Salary > next.Salary ? prev : next);
+            Console.WriteLine(query.Ename + ", " + query.Salary);
+            Console.WriteLine("=============================");
         }
 
         //Z pomocą języka LINQ i metody SelectMany wykonaj złączenie
         //typu CROSS JOIN
         public void Przyklad12()
         {
-            var emp = Emps.SelectMany(o => Depts, (e, d) =>
-            new
+            Console.WriteLine("Przykład 12, Query syntax");
+            var result = (from emp in Emps
+                          from dept in Depts
+                          select new
+                          {
+                              dept.Dname,
+                              emp.Ename,
+                              emp.Salary
+                          }).ToList();
+            foreach(var obj in result)
             {
-                e = e.Deptno,
-                d = d.Deptno
-            });
-            Console.WriteLine(emp.Count());
+                Console.WriteLine("{ " + obj.Dname + ", " + obj.Ename + ", " + obj.Salary + " }");
+            }
+            Console.WriteLine();
+            Console.WriteLine("Przykład 12, Lambda");
+            result = Emps
+                .SelectMany(emp => Depts,
+                (e, d) => new
+                {
+                    d.Dname,
+                    e.Ename,
+                    e.Salary
+                }).ToList();
+            foreach(var obj in result)
+            {
+                Console.WriteLine("{ " + obj.Dname + ", " + obj.Ename + ", " + obj.Salary + " }");
+            }
         }
     }
 }
